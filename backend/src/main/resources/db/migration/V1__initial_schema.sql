@@ -1,0 +1,23 @@
+CREATE TABLE `user` (
+ id BIGINT PRIMARY KEY AUTO_INCREMENT, username VARCHAR(32) NOT NULL UNIQUE, password_hash VARCHAR(255) NOT NULL,
+ nickname VARCHAR(50) NOT NULL, student_no VARCHAR(30) UNIQUE, email VARCHAR(100) UNIQUE, avatar_url VARCHAR(255), bio VARCHAR(255),
+ role VARCHAR(20) NOT NULL, credit_score INT NOT NULL DEFAULT 100, available_points INT NOT NULL DEFAULT 0,
+ frozen_points INT NOT NULL DEFAULT 0, status VARCHAR(20) NOT NULL, last_login_at DATETIME, created_at DATETIME NOT NULL, updated_at DATETIME NOT NULL
+);
+CREATE TABLE skill (id BIGINT PRIMARY KEY AUTO_INCREMENT, name VARCHAR(50) NOT NULL UNIQUE, category VARCHAR(50) NOT NULL, status VARCHAR(20) NOT NULL, created_at DATETIME NOT NULL);
+CREATE TABLE user_skill (id BIGINT PRIMARY KEY AUTO_INCREMENT, user_id BIGINT NOT NULL, skill_id BIGINT NOT NULL, proficiency VARCHAR(20) NOT NULL, description VARCHAR(255), available_mode VARCHAR(20), created_at DATETIME NOT NULL, UNIQUE(user_id,skill_id));
+CREATE TABLE user_skill_need (id BIGINT PRIMARY KEY AUTO_INCREMENT, user_id BIGINT NOT NULL, skill_id BIGINT NOT NULL, priority INT NOT NULL DEFAULT 1, description VARCHAR(255), preferred_mode VARCHAR(20), created_at DATETIME NOT NULL, UNIQUE(user_id,skill_id));
+CREATE TABLE task (id BIGINT PRIMARY KEY AUTO_INCREMENT, publisher_id BIGINT NOT NULL, title VARCHAR(100) NOT NULL, category VARCHAR(50) NOT NULL, description TEXT NOT NULL, location VARCHAR(100), task_time DATETIME NOT NULL, application_deadline DATETIME NOT NULL, reward_points INT NOT NULL, min_credit_score INT NOT NULL DEFAULT 0, status VARCHAR(30) NOT NULL, version INT NOT NULL DEFAULT 0, created_at DATETIME NOT NULL, updated_at DATETIME NOT NULL);
+CREATE INDEX idx_task_status_deadline ON task(status,application_deadline);
+CREATE INDEX idx_task_publisher_status ON task(publisher_id,status);
+CREATE TABLE task_application (id BIGINT PRIMARY KEY AUTO_INCREMENT, task_id BIGINT NOT NULL, applicant_id BIGINT NOT NULL, message VARCHAR(255), expected_finish_time DATETIME, status VARCHAR(20) NOT NULL, created_at DATETIME NOT NULL, UNIQUE(task_id,applicant_id));
+CREATE TABLE task_order (id BIGINT PRIMARY KEY AUTO_INCREMENT, task_id BIGINT NOT NULL UNIQUE, publisher_id BIGINT NOT NULL, accepter_id BIGINT NOT NULL, status VARCHAR(30) NOT NULL, version INT NOT NULL DEFAULT 0, accepted_at DATETIME NOT NULL, started_at DATETIME, completed_at DATETIME, updated_at DATETIME NOT NULL);
+CREATE TABLE task_completion (id BIGINT PRIMARY KEY AUTO_INCREMENT, order_id BIGINT NOT NULL, description TEXT NOT NULL, proof_url VARCHAR(255), submit_time DATETIME NOT NULL, review_status VARCHAR(20) NOT NULL, reject_reason VARCHAR(255));
+CREATE TABLE skill_exchange (id BIGINT PRIMARY KEY AUTO_INCREMENT, requester_id BIGINT NOT NULL, provider_id BIGINT NOT NULL, request_skill_id BIGINT NOT NULL, exchange_skill_id BIGINT, message VARCHAR(255), scheduled_time DATETIME, status VARCHAR(20) NOT NULL, created_at DATETIME NOT NULL, completed_at DATETIME);
+CREATE TABLE point_transaction (id BIGINT PRIMARY KEY AUTO_INCREMENT, user_id BIGINT NOT NULL, business_type VARCHAR(30) NOT NULL, business_id BIGINT, change_amount INT NOT NULL, before_balance INT NOT NULL, after_balance INT NOT NULL, created_at DATETIME NOT NULL, remark VARCHAR(255));
+CREATE INDEX idx_point_user_time ON point_transaction(user_id,created_at);
+CREATE TABLE credit_record (id BIGINT PRIMARY KEY AUTO_INCREMENT, user_id BIGINT NOT NULL, business_type VARCHAR(30) NOT NULL, business_id BIGINT, change_value INT NOT NULL, before_score INT NOT NULL, after_score INT NOT NULL, reason VARCHAR(255) NOT NULL, created_at DATETIME NOT NULL);
+CREATE TABLE review (id BIGINT PRIMARY KEY AUTO_INCREMENT, business_type VARCHAR(20) NOT NULL, business_id BIGINT NOT NULL, reviewer_id BIGINT NOT NULL, reviewee_id BIGINT NOT NULL, rating TINYINT NOT NULL, content VARCHAR(500), created_at DATETIME NOT NULL, UNIQUE(business_type,business_id,reviewer_id));
+CREATE TABLE report (id BIGINT PRIMARY KEY AUTO_INCREMENT, reporter_id BIGINT NOT NULL, target_type VARCHAR(20) NOT NULL, target_id BIGINT NOT NULL, reason_type VARCHAR(30) NOT NULL, description VARCHAR(500), status VARCHAR(20) NOT NULL, handler_id BIGINT, handle_result VARCHAR(500), created_at DATETIME NOT NULL, handled_at DATETIME);
+CREATE TABLE notification (id BIGINT PRIMARY KEY AUTO_INCREMENT, user_id BIGINT NOT NULL, type VARCHAR(30) NOT NULL, title VARCHAR(100) NOT NULL, content VARCHAR(500) NOT NULL, related_business_id BIGINT, is_read BOOLEAN NOT NULL DEFAULT FALSE, created_at DATETIME NOT NULL);
+CREATE INDEX idx_notification_user_read_time ON notification(user_id,is_read,created_at);

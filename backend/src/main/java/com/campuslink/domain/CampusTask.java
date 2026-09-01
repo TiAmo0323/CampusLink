@@ -1,0 +1,3 @@
+package com.campuslink.domain;
+import com.baomidou.mybatisplus.annotation.*; import lombok.Data; import java.time.LocalDateTime;
+@Data @TableName("task") public class CampusTask { @TableId(type=IdType.AUTO) private Long id; private Long publisherId; private String title; private String category; private String description; private String location; private LocalDateTime taskTime; private LocalDateTime applicationDeadline; private Integer rewardPoints; private Integer minCreditScore; private String status; @Version private Integer version; private LocalDateTime createdAt; private LocalDateTime updatedAt; }

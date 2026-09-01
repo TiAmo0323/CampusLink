@@ -1,0 +1,1 @@
+package com.campuslink.mapper; import com.baomidou.mybatisplus.core.mapper.BaseMapper; import com.campuslink.domain.UserSkillNeed; public interface UserSkillNeedMapper extends BaseMapper<UserSkillNeed> {}

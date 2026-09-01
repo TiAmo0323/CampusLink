@@ -1,0 +1,18 @@
+package com.campuslink.controller;
+import com.campuslink.common.ApiResponse;import com.campuslink.config.AuthContext;import com.campuslink.domain.*;import com.campuslink.dto.Requests;import com.campuslink.service.GovernanceService;import com.campuslink.service.AbnormalTaskService;import jakarta.validation.Valid;import lombok.RequiredArgsConstructor;import org.springframework.web.bind.annotation.*;import java.util.*;
+@RestController @RequestMapping("/api") @RequiredArgsConstructor public class GovernanceController {private final GovernanceService service;private final AbnormalTaskService abnormalTaskService;
+ @PostMapping("/reviews") public ApiResponse<Review> review(@Valid @RequestBody Requests.ReviewCreate dto){return ApiResponse.ok(service.review(AuthContext.userId(),dto));}
+ @GetMapping("/reviews/users/{id}") public ApiResponse<List<Review>> reviews(@PathVariable Long id){return ApiResponse.ok(service.reviews(id));}
+ @PostMapping("/reports") public ApiResponse<Report> report(@Valid @RequestBody Requests.ReportCreate dto){return ApiResponse.ok(service.report(AuthContext.userId(),dto));}
+ @GetMapping("/reports/mine") public ApiResponse<List<Report>> mine(){return ApiResponse.ok(service.myReports(AuthContext.userId()));}
+ @GetMapping("/admin/dashboard") public ApiResponse<Map<String,Object>> dashboard(){AuthContext.requireAdmin();return ApiResponse.ok(service.dashboard());}
+ @GetMapping("/admin/users") public ApiResponse<Map<String,Object>> users(@RequestParam(defaultValue="1") int page,@RequestParam(defaultValue="20") int size,@RequestParam(required=false) String status){AuthContext.requireAdmin();return ApiResponse.ok(service.users(page,size,status));}
+ @PutMapping("/admin/users/{id}/status/{status}") public ApiResponse<Map<String,Object>> userStatus(@PathVariable Long id,@PathVariable String status){AuthContext.requireAdmin();return ApiResponse.ok(service.setUserStatus(id,status));}
+ @GetMapping("/admin/tasks") public ApiResponse<Map<String,Object>> tasks(@RequestParam(defaultValue="1") int page,@RequestParam(defaultValue="20") int size,@RequestParam(required=false) String status){AuthContext.requireAdmin();return ApiResponse.ok(service.tasks(page,size,status));}
+ @GetMapping("/admin/reports") public ApiResponse<Map<String,Object>> reports(@RequestParam(defaultValue="1") int page,@RequestParam(defaultValue="20") int size,@RequestParam(required=false) String status){AuthContext.requireAdmin();return ApiResponse.ok(service.reports(page,size,status));}
+ @PostMapping("/admin/reports/{id}/handle") public ApiResponse<Report> handle(@PathVariable Long id,@Valid @RequestBody Requests.ReportHandle dto){AuthContext.requireAdmin();return ApiResponse.ok(service.handleReport(AuthContext.userId(),id,dto));}
+ @PostMapping("/admin/abnormal-tasks/{reportId}/resolve") public ApiResponse<Report> resolveAbnormal(@PathVariable Long reportId,@Valid @RequestBody Requests.AbnormalResolve dto){AuthContext.requireAdmin();return ApiResponse.ok(abnormalTaskService.resolve(reportId,AuthContext.userId(),dto));}
+ @PostMapping("/admin/skills") public ApiResponse<Skill> addSkill(@RequestBody Map<String,String> body){AuthContext.requireAdmin();return ApiResponse.ok(service.addSkill(body.get("name"),body.get("category")));}
+ @GetMapping("/admin/skills") public ApiResponse<List<Skill>> allSkills(){AuthContext.requireAdmin();return ApiResponse.ok(service.allSkills());}
+ @PutMapping("/admin/skills/{id}/status/{status}") public ApiResponse<Skill> skillStatus(@PathVariable Long id,@PathVariable String status){AuthContext.requireAdmin();return ApiResponse.ok(service.setSkillStatus(id,status));}
+}

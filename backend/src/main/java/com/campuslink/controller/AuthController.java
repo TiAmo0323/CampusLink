@@ -1,0 +1,3 @@
+package com.campuslink.controller;
+import com.campuslink.common.ApiResponse; import com.campuslink.dto.Requests; import com.campuslink.service.AuthService; import jakarta.validation.Valid; import lombok.RequiredArgsConstructor; import org.springframework.web.bind.annotation.*; import java.util.Map;
+@RestController @RequestMapping("/api/auth") @RequiredArgsConstructor public class AuthController { private final AuthService service; @PostMapping("/register") public ApiResponse<Map<String,Object>> register(@Valid @RequestBody Requests.Register dto){return ApiResponse.ok(service.register(dto));} @PostMapping("/login") public ApiResponse<Map<String,Object>> login(@Valid @RequestBody Requests.Login dto){return ApiResponse.ok(service.login(dto));} }

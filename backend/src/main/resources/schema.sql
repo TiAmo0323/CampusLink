@@ -1,0 +1,3 @@
+-- 数据库结构现由 Flyway 管理。
+-- 迁移入口：db/migration/V1__initial_schema.sql。
+-- 应用启动时不会自动执行本文件，也不会执行 DROP/重建。

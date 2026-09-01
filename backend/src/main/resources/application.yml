@@ -1,0 +1,45 @@
+server:
+  port: ${SERVER_PORT:8080}
+
+spring:
+  application:
+    name: campuslink
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:h2:mem:campuslink;MODE=MySQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE;NON_KEYWORDS=USER}
+    username: ${SPRING_DATASOURCE_USERNAME:sa}
+    password: ${SPRING_DATASOURCE_PASSWORD:}
+    driver-class-name: ${SPRING_DATASOURCE_DRIVER:org.h2.Driver}
+  sql:
+    init:
+      mode: never
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+  jackson:
+    default-property-inclusion: non_null
+    time-zone: Asia/Shanghai
+
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+  global-config:
+    banner: false
+
+campuslink:
+  token-secret: ${CAMPUSLINK_TOKEN_SECRET:campuslink-course-design-change-in-production}
+  token-hours: 24
+  initial-points: 200
+  seed-demo-data: ${CAMPUSLINK_SEED_DEMO_DATA:true}
+  bootstrap-admin-username: ${CAMPUSLINK_BOOTSTRAP_ADMIN_USERNAME:}
+  bootstrap-admin-password: ${CAMPUSLINK_BOOTSTRAP_ADMIN_PASSWORD:}
+  task-timeout-grace-hours: 24
+  task-timeout-cron: ${CAMPUSLINK_TIMEOUT_CRON:0 */10 * * * *}
+  upload-dir: ${CAMPUSLINK_UPLOAD_DIR:./uploads}
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
