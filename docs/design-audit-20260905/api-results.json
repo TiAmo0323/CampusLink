@@ -1,0 +1,136 @@
+[
+  {
+    "name": "skill_profile_contract",
+    "http": 200,
+    "observed": [
+      "needs",
+      "size",
+      "page",
+      "offers",
+      "total"
+    ]
+  },
+  {
+    "name": "dashboard_contract",
+    "http": 200,
+    "observed": {
+      "users": 3,
+      "recruitingTasks": 2,
+      "activeTasks": 0,
+      "completedTasks": 1,
+      "pendingReports": 0
+    }
+  },
+  {
+    "name": "documented_route /api/skills/match",
+    "http": 500,
+    "observed": {
+      "code": 500,
+      "message": "服务器内部错误"
+    }
+  },
+  {
+    "name": "documented_route /api/points/transactions",
+    "http": 500,
+    "observed": {
+      "code": 500,
+      "message": "服务器内部错误"
+    }
+  },
+  {
+    "name": "invalid_page",
+    "http": 500,
+    "observed": {
+      "code": 500,
+      "message": "服务器内部错误"
+    }
+  },
+  {
+    "name": "invalid_avatar_url",
+    "http": 200,
+    "observed": "javascript:invalid-audit-url"
+  },
+  {
+    "name": "unvalidated_student_number",
+    "http": 200,
+    "observed": {
+      "studentNo": "!!!1788579231"
+    }
+  },
+  {
+    "name": "oversize_category",
+    "http": 500,
+    "observed": {
+      "code": 500,
+      "message": "服务器内部错误"
+    }
+  },
+  {
+    "name": "applicant_view_fields",
+    "http": 200,
+    "observed": {
+      "entry": [
+        "applicant",
+        "application"
+      ],
+      "applicant": [
+        "id",
+        "username",
+        "nickname",
+        "studentNo",
+        "email",
+        "role",
+        "creditScore",
+        "availablePoints",
+        "frozenPoints",
+        "status"
+      ]
+    }
+  },
+  {
+    "name": "documented_accept_application",
+    "http": 500,
+    "observed": {
+      "code": 500,
+      "message": "服务器内部错误"
+    }
+  },
+  {
+    "name": "documented_accept_order",
+    "http": 500,
+    "observed": {
+      "code": 500,
+      "message": "服务器内部错误"
+    }
+  },
+  {
+    "name": "confirmed_violation_credit",
+    "http": 200,
+    "observed": {
+      "before": 100,
+      "after": 100
+    }
+  },
+  {
+    "name": "exchange_without_requester_need",
+    "http": 200,
+    "observed": {
+      "id": 2,
+      "requesterHasNeed": false
+    }
+  },
+  {
+    "name": "accept_disabled_skill_exchange",
+    "http": 200,
+    "observed": "ACCEPTED"
+  },
+  {
+    "name": "registration_initial_credit_audit",
+    "http": 200,
+    "observed": {
+      "creditScore": 100,
+      "creditRecords": 0,
+      "pointTransactions": 1
+    }
+  }
+]

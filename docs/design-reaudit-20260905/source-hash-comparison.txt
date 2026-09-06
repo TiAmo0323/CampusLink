@@ -1,0 +1,15 @@
+﻿backend/src/main/java/com/campuslink/service/TaskService.java
+previous=617e886ab9b2eaa900cc1768313725d2606d04b9874d2a431288f96091294a3e
+current=ffb63032269dde8b57e8a805212bffc670adfb3184790ed0629ba5410960a904
+match=False
+
+backend/src/main/java/com/campuslink/service/SkillService.java
+previous=c07caca3ec299b589be8181449929da5d1ccfa7d069fde4e189b4ffe3ead169f
+current=24730813328f24d7c9a601033100ee7f269e9e605ab84d5e487a2b4d6f9188da
+match=False
+
+backend/src/main/resources/db/migration/V6__governance_and_ledger_constraints.sql
+previous=
+current=6a008b607cf35a24e95bb6ec00d5bcabc220931e659252395bb908737c8e4b76
+match=False
+

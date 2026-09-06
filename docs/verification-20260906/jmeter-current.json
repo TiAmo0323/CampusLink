@@ -1,0 +1,151 @@
+{
+  "generatedAt": "2026-09-06T13:09:20+08:00",
+  "runStartedAt": "2026-09-06T13:06:24+08:00",
+  "durationSeconds": 155.15,
+  "method": "Apache JMeter non-GUI HTTP acceptance against an isolated localhost MySQL database",
+  "environment": {
+    "os": "Windows-10-10.0.26200-SP0",
+    "cpuLogicalCores": 24,
+    "java": "java version \"21.0.8\" 2025-07-15 LTS",
+    "jmeter": "Apache JMeter 5.6.3",
+    "database": "MySQL 8.0.46",
+    "api": "http://127.0.0.1:18081"
+  },
+  "dataset": {
+    "tasks": 100001,
+    "matchingCandidates": 1000
+  },
+  "testPlan": [
+    {
+      "name": "50 concurrent readers",
+      "threads": 50,
+      "rampSeconds": 10,
+      "durationSeconds": 60
+    },
+    {
+      "name": "application list query",
+      "threads": 10,
+      "rampSeconds": 10,
+      "durationSeconds": 30
+    },
+    {
+      "name": "1000 candidate matching",
+      "threads": 10,
+      "rampSeconds": 10,
+      "durationSeconds": 30
+    },
+    {
+      "name": "transactional task publication",
+      "threads": 10,
+      "rampSeconds": 10,
+      "durationSeconds": 30
+    },
+    {
+      "name": "completion submission",
+      "threads": 10,
+      "rampSeconds": 2,
+      "durationSeconds": 0
+    },
+    {
+      "name": "settlement approval",
+      "threads": 10,
+      "rampSeconds": 2,
+      "durationSeconds": 0
+    }
+  ],
+  "thresholds": {
+    "maximumErrorRatePercent": 1,
+    "responseTimeMetric": "nearest-rank P95"
+  },
+  "groups": [
+    {
+      "name": "task-list",
+      "samples": 22676,
+      "averageMs": 63.92,
+      "p95Ms": 110,
+      "maxMs": 200,
+      "failures": 0,
+      "errorRatePercent": 0.0,
+      "limitMs": 1000,
+      "passed": true
+    },
+    {
+      "name": "task-detail",
+      "samples": 22653,
+      "averageMs": 57.52,
+      "p95Ms": 75,
+      "maxMs": 158,
+      "failures": 0,
+      "errorRatePercent": 0.0,
+      "limitMs": 1000,
+      "passed": true
+    },
+    {
+      "name": "application-list",
+      "samples": 16982,
+      "averageMs": 14.95,
+      "p95Ms": 21,
+      "maxMs": 168,
+      "failures": 0,
+      "errorRatePercent": 0.0,
+      "limitMs": 1000,
+      "passed": true
+    },
+    {
+      "name": "skill-match",
+      "samples": 5433,
+      "averageMs": 46.88,
+      "p95Ms": 63,
+      "maxMs": 124,
+      "failures": 0,
+      "errorRatePercent": 0.0,
+      "limitMs": 1000,
+      "passed": true
+    },
+    {
+      "name": "task-publish",
+      "samples": 3772,
+      "averageMs": 67.61,
+      "p95Ms": 91,
+      "maxMs": 150,
+      "failures": 0,
+      "errorRatePercent": 0.0,
+      "limitMs": 2000,
+      "passed": true
+    },
+    {
+      "name": "completion-submit",
+      "samples": 100,
+      "averageMs": 21.01,
+      "p95Ms": 28,
+      "maxMs": 36,
+      "failures": 0,
+      "errorRatePercent": 0.0,
+      "limitMs": 2000,
+      "passed": true
+    },
+    {
+      "name": "settlement-approve",
+      "samples": 100,
+      "averageMs": 112.18,
+      "p95Ms": 175,
+      "maxMs": 192,
+      "failures": 0,
+      "errorRatePercent": 0.0,
+      "limitMs": 2000,
+      "passed": true
+    }
+  ],
+  "totalSamples": 71716,
+  "backendSourceTreeSha256": "d25724986b12a03e270a61f6a6e82612b61165e7903d2f88035d61a8b46d9686",
+  "sourceSha256": {
+    "backend/src/main/java/com/campuslink/service/TaskService.java": "841a4670e23956f661c7f1afcba78751457153a23d21c1357256e7e74f6cb730",
+    "backend/src/main/java/com/campuslink/service/SkillService.java": "fcb6a4255f25d57f39b4ca4c1d82f0d09af615240e19adda7ce12b660bb6b363",
+    "backend/src/main/java/com/campuslink/service/PointCreditService.java": "f6ea93d811ae5986f63db61e9421e56f59d08b56a22f39b4da25fef5e63cb5bc",
+    "backend/src/main/java/com/campuslink/service/StorageService.java": "55c2d9bf19c9cbaedcf155b53f35937c11ea6777b7951f287d04ce11627cbf25",
+    "backend/src/main/java/com/campuslink/vo/Views.java": "0c451c273300233a030b3461e1312a5e7383491fcf888f5e4669f82260c26ef3",
+    "backend/src/main/resources/db/migration/V6__governance_and_ledger_constraints.sql": "031af3e733d14e28f709e13ad346df1261b51147fdc2226f29049e99ba70140e"
+  },
+  "jmeterDistributionSha512": "387fadca903ee0aa30e3f2115fdfedb3898b102e6b9fe7cc3942703094bd2e65b235df2b0c6d0d3248e74c9a7950a36e42625fd74425368342c12e40b0163076",
+  "passed": true
+}

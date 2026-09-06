@@ -29,7 +29,7 @@ public class WebConfig implements WebMvcConfigurer {
     @Override public void addResourceHandlers(ResourceHandlerRegistry registry) {
         registry.addResourceHandler("/uploads/**").addResourceLocations(Path.of(uploadDir).toAbsolutePath().normalize().toUri().toString());
     }
-    @Bean public MybatisPlusInterceptor mybatisPlusInterceptor() {
+    @Bean public static MybatisPlusInterceptor mybatisPlusInterceptor() {
         MybatisPlusInterceptor interceptor = new MybatisPlusInterceptor();
         interceptor.addInnerInterceptor(new OptimisticLockerInnerInterceptor());
         interceptor.addInnerInterceptor(new PaginationInnerInterceptor(DbType.MYSQL)); return interceptor;

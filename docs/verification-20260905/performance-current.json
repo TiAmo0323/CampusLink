@@ -1,0 +1,111 @@
+{
+  "generatedAt": "2026-09-06T12:35:26+08:00",
+  "database": "isolated MySQL 8.0",
+  "dataset": {
+    "tasks": 100000,
+    "matchingCandidates": 1000
+  },
+  "groups": [
+    {
+      "name": "task-list-50-concurrency",
+      "requests": 500,
+      "workers": 50,
+      "averageMs": 150.36,
+      "p95Ms": 251.32,
+      "maxMs": 360.45,
+      "failures": 0,
+      "errorRatePercent": 0.0,
+      "limitMs": 1000,
+      "passed": true
+    },
+    {
+      "name": "task-detail-50-concurrency",
+      "requests": 200,
+      "workers": 50,
+      "averageMs": 90.08,
+      "p95Ms": 114.59,
+      "maxMs": 128.51,
+      "failures": 0,
+      "errorRatePercent": 0.0,
+      "limitMs": 1000,
+      "passed": true
+    },
+    {
+      "name": "skill-match-1000-candidates",
+      "requests": 100,
+      "workers": 10,
+      "averageMs": 107.22,
+      "p95Ms": 175.82,
+      "maxMs": 206.48,
+      "failures": 0,
+      "errorRatePercent": 0.0,
+      "limitMs": 1000,
+      "passed": true
+    },
+    {
+      "name": "application-list-pagination",
+      "requests": 100,
+      "workers": 10,
+      "averageMs": 35.8,
+      "p95Ms": 57.0,
+      "maxMs": 63.72,
+      "failures": 0,
+      "errorRatePercent": 0.0,
+      "limitMs": 2000,
+      "passed": true
+    },
+    {
+      "name": "order-start",
+      "requests": 10,
+      "workers": 10,
+      "averageMs": 40.05,
+      "p95Ms": 41.55,
+      "maxMs": 41.55,
+      "failures": 0,
+      "errorRatePercent": 0.0,
+      "limitMs": 2000,
+      "passed": true
+    },
+    {
+      "name": "completion-submit",
+      "requests": 10,
+      "workers": 10,
+      "averageMs": 36.81,
+      "p95Ms": 41.4,
+      "maxMs": 41.4,
+      "failures": 0,
+      "errorRatePercent": 0.0,
+      "limitMs": 2000,
+      "passed": true
+    },
+    {
+      "name": "settlement-approve",
+      "requests": 10,
+      "workers": 10,
+      "averageMs": 236.58,
+      "p95Ms": 399.06,
+      "maxMs": 399.06,
+      "failures": 0,
+      "errorRatePercent": 0.0,
+      "limitMs": 2000,
+      "passed": true
+    }
+  ],
+  "method": "Concurrent HTTP precheck; final performance acceptance uses JMeter",
+  "durationSeconds": 6.2,
+  "environment": {
+    "os": "Windows-10-10.0.26200-SP0",
+    "cpuLogicalCores": 24,
+    "python": "3.9.13",
+    "api": "http://127.0.0.1:18081"
+  },
+  "sourceSha256": {
+    "backend/src/main/java/com/campuslink/service/TaskService.java": "3755d2bf1d4e87d1077ce3d87b34c1f8cde884053d103e38dd33961d766158e3",
+    "backend/src/main/java/com/campuslink/service/SkillService.java": "8295570f08e4d72eba167efa568b178ba8910c228e6e252e9db78c0ce8430393",
+    "backend/src/main/java/com/campuslink/service/PointCreditService.java": "f6ea93d811ae5986f63db61e9421e56f59d08b56a22f39b4da25fef5e63cb5bc",
+    "backend/src/main/java/com/campuslink/service/StorageService.java": "55c2d9bf19c9cbaedcf155b53f35937c11ea6777b7951f287d04ce11627cbf25",
+    "backend/src/main/java/com/campuslink/vo/Views.java": "9ee08787976d641713fe4a27b8de222b482bd7d965286797e1cd0e72e9a1f1af",
+    "backend/src/main/resources/db/migration/V6__governance_and_ledger_constraints.sql": "031af3e733d14e28f709e13ad346df1261b51147fdc2226f29049e99ba70140e"
+  },
+  "passed": true
+}

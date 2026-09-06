@@ -1,150 +1,36 @@
 <script setup>
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed,onMounted,reactive,ref } from 'vue'
 import { ElMessage } from 'element-plus'
+import ReportButton from '../components/ReportButton.vue'
 import http from '../api/http'
 import { useAuthStore } from '../stores/auth'
 import { statusText } from '../utils/format'
-
-const auth = useAuthStore()
-const tab = ref('match')
-const skills = ref([])
-const profile = ref({ offers: [], needs: [] })
-const matches = ref([])
-const exchanges = ref([])
-const offer = reactive({ skillId: null, proficiency: 'INTERMEDIATE', description: '', availableMode: 'BOTH' })
-const need = reactive({ skillId: null, priority: 1, description: '', preferredMode: 'BOTH' })
-const dialog = ref(false)
-const exchange = reactive({ providerId: null, requestSkillId: null, exchangeSkillId: null, message: '', scheduledTime: '' })
-const myOfferOptions = computed(() => profile.value.offers.map((item) => item.skill))
-
-async function load() {
-  [skills.value, profile.value, matches.value, exchanges.value] = await Promise.all([
-    http.get('/api/public/skills'),
-    http.get('/api/skills/profile'),
-    http.get('/api/skills/matches'),
-    http.get('/api/exchanges')
-  ])
-}
-
-async function save(type, payload) {
-  await http.post(`/api/skills/${type}`, payload)
-  ElMessage.success('技能档案已更新')
-  await load()
-}
-
-async function remove(type, id) {
-  await http.delete(`/api/skills/${type}/${id}`)
-  ElMessage.success('已删除')
-  await load()
-}
-
-function openExchange(match) {
-  exchange.providerId = match.user.id
-  exchange.requestSkillId = match.matchedSkills[0]?.id
-  exchange.exchangeSkillId = null
-  exchange.message = '希望和你约时间互相学习'
-  exchange.scheduledTime = ''
-  dialog.value = true
-}
-
-async function submitExchange() {
-  await http.post('/api/exchanges', exchange)
-  ElMessage.success('互助申请已发送')
-  dialog.value = false
-  await load()
-}
-
-async function action(id, name) {
-  await http.post(`/api/exchanges/${id}/${name}`)
-  ElMessage.success('状态已更新')
-  await load()
-}
-
+const auth=useAuthStore(),tab=ref('match'),skills=ref([]),profile=ref({offers:[],needs:[],offersTotal:0,needsTotal:0}),matches=ref([]),exchanges=ref([]),offerOptions=ref([]),receivedReviews=ref([]),receivedReviewsTotal=ref(0)
+const offerPage=ref(1),needPage=ref(1),matchPage=ref(1),matchTotal=ref(0),exchangePage=ref(1),exchangeTotal=ref(0),reviewPage=ref(1)
+const offer=reactive({skillId:null,proficiency:'INTERMEDIATE',description:'',availableMode:'BOTH',availableTime:''}),need=reactive({skillId:null,priority:1,description:'',preferredMode:'BOTH'})
+const exchangeDialog=ref(false),reviewDialog=ref(false),reviewItem=ref(null),requestOptions=ref([]),exchange=reactive({providerId:null,requestSkillId:null,exchangeSkillId:null,message:'',scheduledTime:''}),review=reactive({rating:5,content:''})
+const myOfferOptions=computed(()=>offerOptions.value.map(item=>item.skill).filter(Boolean)),modes=[['ONLINE','线上'],['OFFLINE','线下'],['BOTH','线上或线下']]
+function modeText(value){return modes.find(x=>x[0]===value)?.[1]||value}
+async function loadSkillDictionary(){const records=[];let page=1;while(true){const p=await http.get('/api/public/skills',{params:{page,size:50}});records.push(...p.records);if(records.length>=p.total||!p.records.length)return records;page++}}
+async function loadAllOffers(){const result=[];let page=1;while(true){const p=await http.get('/api/skills/profile',{params:{offerPage:page,offerSize:50,needPage:1,needSize:1}});result.push(...p.offers);if(result.length>=p.offersTotal||!p.offers.length)return result;page++}}
+async function load(){const values=await Promise.all([loadSkillDictionary(),http.get('/api/skills/profile',{params:{offerPage:offerPage.value,offerSize:10,needPage:needPage.value,needSize:10}}),http.get('/api/skills/matches',{params:{page:matchPage.value,size:10}}),http.get('/api/exchanges',{params:{page:exchangePage.value,size:10}}),loadAllOffers(),http.get(`/api/reviews/users/${auth.user.id}`,{params:{page:reviewPage.value,size:10}})]);skills.value=values[0];profile.value=values[1];matches.value=values[2].records;matchTotal.value=values[2].total;exchanges.value=values[3].records;exchangeTotal.value=values[3].total;offerOptions.value=values[4];receivedReviews.value=values[5].records;receivedReviewsTotal.value=values[5].total}
+async function save(type,payload){await http.post(`/api/skills/${type}`,payload);ElMessage.success('技能档案已更新');await load()}
+async function remove(type,id){await http.delete(`/api/skills/${type}/${id}`);ElMessage.success('已删除');await load()}
+function editOffer(item){Object.assign(offer,{skillId:item.record.skillId,proficiency:item.record.proficiency,description:item.record.description||'',availableMode:item.record.availableMode||'BOTH',availableTime:item.record.availableTime||''})}
+function editNeed(item){Object.assign(need,{skillId:item.record.skillId,priority:item.record.priority,description:item.record.description||'',preferredMode:item.record.preferredMode||'BOTH'})}
+function openExchange(match){requestOptions.value=match.matchedSkills;Object.assign(exchange,{providerId:match.user.id,requestSkillId:match.matchedSkills[0]?.id,exchangeSkillId:null,message:'希望和你约时间互相学习',scheduledTime:''});exchangeDialog.value=true}
+async function submitExchange(){await http.post('/api/exchanges',exchange);ElMessage.success('互助申请已发送');exchangeDialog.value=false;await load()}
+async function action(id,name){await http.post(`/api/exchanges/${id}/${name}`);ElMessage.success('状态已更新');await load()}
+function openReview(item){reviewItem.value=item;Object.assign(review,{rating:5,content:''});reviewDialog.value=true}
+async function submitReview(){const e=reviewItem.value.exchange,other=e.requesterId===auth.user.id?reviewItem.value.provider:reviewItem.value.requester;await http.post('/api/reviews',{businessType:'SKILL_EXCHANGE',businessId:e.id,revieweeId:other.id,...review});ElMessage.success('评价已提交');reviewDialog.value=false;await load()}
 onMounted(load)
 </script>
-
-<template>
-  <div>
-    <div class="page-head">
-      <div><h1>技能互助</h1><p>基于供需覆盖、信用、评价与活跃度的可解释推荐</p></div>
-    </div>
-    <section class="surface panel">
-      <el-tabs v-model="tab">
-        <el-tab-pane label="匹配推荐" name="match">
-          <div class="grid">
-            <article v-for="match in matches" :key="match.user.id" class="task-card surface" style="box-shadow:none">
-              <div class="card-top"><strong>{{ match.user.nickname }}</strong><el-tag v-if="match.mutualMatch" type="success">双向互补</el-tag></div>
-              <div style="display:flex;align-items:baseline;gap:5px;margin:18px 0"><span class="points" style="font-size:34px">{{ match.score }}</span><span class="muted">匹配分</span></div>
-              <p class="muted">{{ match.reason }}</p>
-              <div><el-tag v-for="item in match.matchedSkills" :key="item.id" style="margin:0 6px 6px 0" effect="plain">{{ item.name }}</el-tag></div>
-              <el-button type="primary" plain class="full" style="margin-top:12px" @click="openExchange(match)">发起技能互助</el-button>
-            </article>
-          </div>
-          <div v-if="!matches.length" class="empty">先在“我的技能档案”中添加技能需求，才能获得推荐</div>
-        </el-tab-pane>
-
-        <el-tab-pane label="我的技能档案" name="profile">
-          <div class="two-col">
-            <section>
-              <h3>我能提供</h3>
-              <div v-for="item in profile.offers" :key="item.record.id" class="list-card" style="background:#f5f7f3">
-                <strong>{{ item.skill.name }}</strong><span class="muted"> · {{ item.record.proficiency }}</span>
-                <p>{{ item.record.description || '暂无介绍' }}</p>
-                <el-button text type="danger" @click="remove('offers', item.record.id)">删除</el-button>
-              </div>
-              <el-divider />
-              <el-form label-position="top">
-                <el-form-item label="技能"><el-select v-model="offer.skillId" class="full"><el-option v-for="item in skills" :key="item.id" :label="`${item.category} / ${item.name}`" :value="item.id" /></el-select></el-form-item>
-                <el-form-item label="熟练程度"><el-select v-model="offer.proficiency" class="full"><el-option label="入门" value="BEGINNER" /><el-option label="熟练" value="INTERMEDIATE" /><el-option label="精通" value="ADVANCED" /></el-select></el-form-item>
-                <el-form-item label="技能介绍"><el-input v-model="offer.description" /></el-form-item>
-                <el-button type="primary" @click="save('offers', offer)">保存供给</el-button>
-              </el-form>
-            </section>
-            <section>
-              <h3>我想学习</h3>
-              <div v-for="item in profile.needs" :key="item.record.id" class="list-card" style="background:#f5f7f3">
-                <strong>{{ item.skill.name }}</strong><span class="muted"> · 优先级 {{ item.record.priority }}</span>
-                <p>{{ item.record.description || '暂无说明' }}</p>
-                <el-button text type="danger" @click="remove('needs', item.record.id)">删除</el-button>
-              </div>
-              <el-divider />
-              <el-form label-position="top">
-                <el-form-item label="技能"><el-select v-model="need.skillId" class="full"><el-option v-for="item in skills" :key="item.id" :label="`${item.category} / ${item.name}`" :value="item.id" /></el-select></el-form-item>
-                <el-form-item label="优先级"><el-slider v-model="need.priority" :min="1" :max="5" show-stops /></el-form-item>
-                <el-form-item label="需求说明"><el-input v-model="need.description" /></el-form-item>
-                <el-button type="primary" @click="save('needs', need)">保存需求</el-button>
-              </el-form>
-            </section>
-          </div>
-        </el-tab-pane>
-
-        <el-tab-pane label="互助订单" name="exchange">
-          <article v-for="item in exchanges" :key="item.exchange.id" class="list-card" style="background:#f5f7f3">
-            <div style="display:flex;justify-content:space-between"><strong>{{ item.requester.nickname }} → {{ item.provider.nickname }}</strong><span class="status-pill">{{ statusText(item.exchange.status) }}</span></div>
-            <p>请求技能：{{ item.requestSkill.name }} <span v-if="item.exchangeSkill">· 交换 {{ item.exchangeSkill.name }}</span></p>
-            <p class="muted">{{ item.exchange.message }}</p>
-            <div class="action-row">
-              <template v-if="item.exchange.status === 'PENDING' && item.exchange.providerId === auth.user?.id">
-                <el-button size="small" type="success" @click="action(item.exchange.id, 'accept')">接受</el-button>
-                <el-button size="small" @click="action(item.exchange.id, 'reject')">拒绝</el-button>
-              </template>
-              <el-button v-if="item.exchange.status === 'ACCEPTED'" size="small" type="primary" @click="action(item.exchange.id, 'start')">开始互助</el-button>
-              <el-button v-if="item.exchange.status === 'IN_PROGRESS'" size="small" type="primary" @click="action(item.exchange.id, 'complete')">标记完成</el-button>
-            </div>
-          </article>
-          <div v-if="!exchanges.length" class="empty">暂无技能互助申请</div>
-        </el-tab-pane>
-      </el-tabs>
-    </section>
-
-    <el-dialog v-model="dialog" title="发起技能互助" width="500">
-      <el-form label-position="top">
-        <el-form-item label="希望对方提供"><el-select v-model="exchange.requestSkillId" class="full"><el-option v-for="item in skills" :key="item.id" :label="item.name" :value="item.id" /></el-select></el-form-item>
-        <el-form-item label="我可以交换（可选）"><el-select v-model="exchange.exchangeSkillId" clearable class="full"><el-option v-for="item in myOfferOptions" :key="item.id" :label="item.name" :value="item.id" /></el-select></el-form-item>
-        <el-form-item label="申请说明"><el-input v-model="exchange.message" type="textarea" :rows="3" /></el-form-item>
-        <el-form-item label="约定时间"><el-date-picker v-model="exchange.scheduledTime" type="datetime" value-format="YYYY-MM-DDTHH:mm:ss" class="full" /></el-form-item>
-      </el-form>
-      <template #footer><el-button @click="dialog=false">取消</el-button><el-button type="primary" @click="submitExchange">发送申请</el-button></template>
-    </el-dialog>
-  </div>
-</template>
+<template><div><div class="page-head"><div><h1>技能互助</h1><p>基于供需覆盖、信用、评价与活跃度的可解释推荐</p></div></div><section class="surface panel"><el-tabs v-model="tab">
+<el-tab-pane label="匹配推荐" name="match"><div class="grid"><article v-for="match in matches" :key="match.user.id" class="task-card surface" style="box-shadow:none"><div class="card-top"><strong>{{match.user.nickname}}</strong><el-tag v-if="match.mutualMatch" type="success">双向互补</el-tag></div><div class="score-ring"><el-progress type="circle" :percentage="match.score" :width="96" :stroke-width="8" color="#315f55"><template #default="{percentage}"><strong>{{percentage}}</strong><small>匹配分</small></template></el-progress></div><p class="muted">{{match.reason}}</p><div><el-tag v-for="item in match.matchedSkills" :key="item.id" effect="plain" class="skill-tag">{{item.name}}</el-tag></div><div class="action-row"><el-button type="primary" plain @click="openExchange(match)">发起技能互助</el-button><ReportButton target-type="USER" :target-id="match.user.id"/></div></article></div><el-pagination v-model:current-page="matchPage" :total="matchTotal" :page-size="10" layout="prev,pager,next" @current-change="load"/><div v-if="!matches.length" class="empty">先添加技能需求，才能获得推荐</div></el-tab-pane>
+<el-tab-pane label="我的技能档案" name="profile"><div class="two-col"><section><h3>我能提供</h3><div v-for="item in profile.offers" :key="item.record.id" class="list-card"><div class="card-top"><strong>{{item.skill.name}}</strong><ReportButton target-type="SKILL" :target-id="item.skill.id"/></div><span class="muted">{{item.record.proficiency}} · {{modeText(item.record.availableMode)}}</span><p>{{item.record.description||'暂无介绍'}}</p><p class="muted">可用时间：{{item.record.availableTime||'待沟通'}}</p><div class="action-row"><el-button text @click="editOffer(item)">编辑</el-button><el-button text type="danger" @click="remove('offers',item.record.id)">删除</el-button></div></div><el-pagination v-model:current-page="offerPage" :total="profile.offersTotal||0" :page-size="10" layout="prev,pager,next" @current-change="load"/><el-divider/><el-form label-position="top"><el-form-item label="技能"><el-select v-model="offer.skillId" class="full"><el-option v-for="item in skills" :key="item.id" :label="`${item.category} / ${item.name}`" :value="item.id"/></el-select></el-form-item><el-form-item label="熟练程度"><el-select v-model="offer.proficiency"><el-option label="入门" value="BEGINNER"/><el-option label="熟练" value="INTERMEDIATE"/><el-option label="精通" value="ADVANCED"/></el-select></el-form-item><el-form-item label="提供方式"><el-radio-group v-model="offer.availableMode"><el-radio-button v-for="m in modes" :key="m[0]" :value="m[0]">{{m[1]}}</el-radio-button></el-radio-group></el-form-item><el-form-item label="可用时间"><el-input v-model="offer.availableTime" maxlength="255"/></el-form-item><el-form-item label="技能介绍"><el-input v-model="offer.description"/></el-form-item><el-button type="primary" @click="save('offers',offer)">保存供给</el-button></el-form></section>
+<section><h3>我想学习</h3><div v-for="item in profile.needs" :key="item.record.id" class="list-card"><strong>{{item.skill.name}}</strong><span class="muted"> · 优先级 {{item.record.priority}} · {{modeText(item.record.preferredMode)}}</span><p>{{item.record.description||'暂无说明'}}</p><div class="action-row"><el-button text @click="editNeed(item)">编辑</el-button><el-button text type="danger" @click="remove('needs',item.record.id)">删除</el-button></div></div><el-pagination v-model:current-page="needPage" :total="profile.needsTotal||0" :page-size="10" layout="prev,pager,next" @current-change="load"/><el-divider/><el-form label-position="top"><el-form-item label="技能"><el-select v-model="need.skillId" class="full"><el-option v-for="item in skills" :key="item.id" :label="`${item.category} / ${item.name}`" :value="item.id"/></el-select></el-form-item><el-form-item label="优先级"><el-slider v-model="need.priority" :min="1" :max="5" show-stops/></el-form-item><el-form-item label="期望方式"><el-radio-group v-model="need.preferredMode"><el-radio-button v-for="m in modes" :key="m[0]" :value="m[0]">{{m[1]}}</el-radio-button></el-radio-group></el-form-item><el-form-item label="需求说明"><el-input v-model="need.description"/></el-form-item><el-button type="primary" @click="save('needs',need)">保存需求</el-button></el-form><el-divider/><h3>近期收到的评价</h3><el-pagination v-model:current-page="reviewPage" :total="receivedReviewsTotal" :page-size="10" layout="prev,pager,next" @current-change="load"/><div v-for="r in receivedReviews" :key="r.id" class="list-card"><el-rate :model-value="r.rating" disabled/><p>{{r.content||'未填写评价内容'}}</p><ReportButton target-type="REVIEW" :target-id="r.id"/></div><p v-if="!receivedReviews.length" class="muted">暂无评价</p></section></div></el-tab-pane>
+<el-tab-pane label="互助订单" name="exchange"><article v-for="item in exchanges" :key="item.exchange.id" class="list-card"><div class="card-top"><strong>{{item.requester.nickname}} → {{item.provider.nickname}}</strong><span class="status-pill">{{statusText(item.exchange.status)}}</span></div><p>请求技能：{{item.requestSkill.name}} <span v-if="item.exchangeSkill">· 交换 {{item.exchangeSkill.name}}</span></p><p class="muted">{{item.exchange.message}}</p><div class="action-row"><template v-if="item.exchange.status==='PENDING'&&item.exchange.providerId===auth.user?.id"><el-button size="small" type="success" @click="action(item.exchange.id,'accept')">接受</el-button><el-button size="small" @click="action(item.exchange.id,'reject')">拒绝</el-button></template><el-button v-if="item.exchange.status==='ACCEPTED'&&item.exchange.requesterId===auth.user?.id" size="small" type="primary" @click="action(item.exchange.id,'start')">开始互助</el-button><el-button v-if="item.exchange.status==='IN_PROGRESS'&&(item.exchange.providerId===auth.user?.id||item.exchange.providerCompletedAt)" size="small" type="primary" @click="action(item.exchange.id,'complete')">{{item.exchange.providerId===auth.user?.id?'提供方标记完成':'确认验收完成'}}</el-button><el-button v-if="['ACCEPTED','IN_PROGRESS'].includes(item.exchange.status)" @click="action(item.exchange.id,'cancel')">取消互助</el-button><el-button v-if="item.exchange.status==='COMPLETED'&&!item.reviewedByMe" type="primary" plain @click="openReview(item)">评价对方</el-button></div></article><el-pagination v-model:current-page="exchangePage" :total="exchangeTotal" :page-size="10" layout="prev,pager,next" @current-change="load"/><div v-if="!exchanges.length" class="empty">暂无技能互助申请</div></el-tab-pane>
+</el-tabs></section>
+<el-dialog v-model="exchangeDialog" title="发起技能互助" width="500"><el-form label-position="top"><el-form-item label="希望对方提供"><el-select v-model="exchange.requestSkillId" class="full"><el-option v-for="item in requestOptions" :key="item.id" :label="item.name" :value="item.id"/></el-select></el-form-item><el-form-item label="我可以交换（可选）"><el-select v-model="exchange.exchangeSkillId" clearable class="full"><el-option v-for="item in myOfferOptions" :key="item.id" :label="item.name" :value="item.id"/></el-select></el-form-item><el-form-item label="申请说明"><el-input v-model="exchange.message" type="textarea" :rows="3"/></el-form-item><el-form-item label="约定时间"><el-date-picker v-model="exchange.scheduledTime" type="datetime" value-format="YYYY-MM-DDTHH:mm:ss" class="full"/></el-form-item></el-form><template #footer><el-button @click="exchangeDialog=false">取消</el-button><el-button type="primary" @click="submitExchange">发送申请</el-button></template></el-dialog>
+<el-dialog v-model="reviewDialog" title="评价本次技能互助" width="460"><el-form label-position="top"><el-form-item label="星级"><el-rate v-model="review.rating"/></el-form-item><el-form-item label="评价内容"><el-input v-model="review.content" type="textarea" :rows="4" maxlength="500" show-word-limit/></el-form-item></el-form><template #footer><el-button @click="reviewDialog=false">取消</el-button><el-button type="primary" @click="submitReview">提交评价</el-button></template></el-dialog></div></template>
+<style scoped>.list-card{background:#f5f7f3}.score-ring{display:flex;justify-content:center;margin:18px 0}.score-ring strong,.score-ring small{display:block;text-align:center}.score-ring strong{font:700 25px Georgia;color:#315f55}.score-ring small{margin-top:2px;color:#72807b}.skill-tag{margin:0 6px 6px 0}</style>

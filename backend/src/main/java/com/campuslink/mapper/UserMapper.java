@@ -1,1 +1,1 @@
-package com.campuslink.mapper; import com.baomidou.mybatisplus.core.mapper.BaseMapper; import com.campuslink.domain.User; public interface UserMapper extends BaseMapper<User> {}
+package com.campuslink.mapper; import com.baomidou.mybatisplus.core.mapper.BaseMapper; import com.campuslink.domain.User; public interface UserMapper extends BaseMapper<User> { @org.apache.ibatis.annotations.Select("SELECT * FROM `user` WHERE id=#{id} FOR UPDATE") User lockById(@org.apache.ibatis.annotations.Param("id") Long id); }

@@ -3,12 +3,31 @@
 .github/modernize/
 backend/target/
 backend/uploads/
+/uploads/
 frontend/node_modules/
 frontend/dist/
+frontend/test-results/
+frontend/playwright-report/
+scripts/__pycache__/
+/CampusLink需求分析与详细设计书_正式版2.pdf
+/CampusLink需求分析与详细设计书（大纲）_修订版.docx
+/CampusLink需求分析与详细设计书（大纲）_修订版.pdf
+/CampusLink需求分析与详细设计书_后续章节修订版.docx
+/CampusLink需求分析与详细设计书_后续章节修订版.pdf
 *.log
 .env
 *.jks
 *.keystore
+
+# 本地生成的课程报告可由脚本重新生成，不提交二进制成品
+/CampusLink软件系统分析设计与实现报告.docx
+/CampusLink项目开发进展报告_*.docx
+/CampusLink项目开发进展报告_*.pdf
+
+# 需求原文及临时进程信息由项目方本地保管
+/docs/design-reaudit-20260905/formal.txt
+/docs/design-reaudit-20260905/revision.txt
+/docs/design-reaudit-20260905/e2e-pids.json
 
 # 需求与详细设计文档由项目方单独保管，不发布到源码仓库
 /CampusLink需求分析与详细设计书（大纲）.docx

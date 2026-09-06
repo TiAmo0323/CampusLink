@@ -7,7 +7,7 @@
 - 开始任务、提交凭证、验收/驳回、积分结算、信用变化与通知。
 - 任务异常申请、管理员退款/结算/恢复裁决、自动超时扫描。
 - 技能供给与需求、可解释匹配评分、双向互补、技能互助订单。
-- 评价信用联动、举报治理、管理员统计和分页管理。
+- 评价信用联动、举报治理、管理员统计、状态变更原因审计和分页管理。
 - 图片凭证上传、Flyway 数据库迁移和 Swagger/OpenAPI 文档。
 
 ## 本地启动
@@ -67,7 +67,7 @@ MySQL 数据与上传图片分别保存在命名卷 `campuslink_mysql` 和 `camp
 
 ## API 清单
 
-统一响应格式：`{"code":0,"message":"success","data":...}`。业务失败时 `code` 为 400/401/403/404/500 等，具体原因位于 `message`。
+统一响应格式：`{"code":200,"message":"success","data":...}`。业务失败时 `code` 为 400/401/403/404/429/500 等，具体原因位于 `message`。
 
 ### 公共接口
 
@@ -84,8 +84,8 @@ MySQL 数据与上传图片分别保存在命名卷 `campuslink_mysql` 和 `camp
 | 方法 | 路径 | 说明 |
 |---|---|---|
 | GET/PUT | `/api/users/me` | 查询/更新本人资料 |
-| GET | `/api/wallet?page=1&size=20` | 余额、冻结积分、分页积分/信用流水 |
-| GET | `/api/notifications?page=1&size=20` | 分页站内通知 |
+| GET | `/api/wallet?page=1&size=10` | 余额、冻结积分、分页积分/信用流水 |
+| GET | `/api/notifications?page=1&size=10` | 分页站内通知 |
 | POST | `/api/notifications/{id}/read` | 标记通知已读 |
 | POST | `/api/files/images` | 上传图片凭证，multipart 字段名 `file` |
 
@@ -96,7 +96,7 @@ MySQL 数据与上传图片分别保存在命名卷 `campuslink_mysql` 和 `camp
 | POST | `/api/tasks` | 发布任务并冻结积分 |
 | GET | `/api/tasks/mine` | 我发布/接取的任务 |
 | POST | `/api/tasks/{id}/applications` | 申请任务 |
-| GET | `/api/tasks/{id}/applications?page=1&size=20` | 发布者分页查看申请人 |
+| GET | `/api/tasks/{id}/applications?page=1&size=10` | 发布者分页查看申请人 |
 | POST | `/api/applications/{id}/accept` | 原子确认一名接取者 |
 | POST | `/api/tasks/{id}/cancel` | 招募期取消并退款 |
 | GET | `/api/orders/{id}` | 履约订单详情 |
@@ -132,14 +132,17 @@ MySQL 数据与上传图片分别保存在命名卷 `campuslink_mysql` 和 `camp
 |---|---|---|
 | GET | `/api/admin/dashboard` | 平台聚合统计 |
 | GET | `/api/admin/users` | 分页用户列表 |
-| PUT | `/api/admin/users/{id}/status/{status}` | 正常/禁用账户 |
+| PUT | `/api/admin/users/{id}/status/{status}` | 正常/禁用账户；请求体携带 `reason` 并写入操作审计 |
 | GET | `/api/admin/tasks` | 分页任务列表 |
 | GET | `/api/admin/reports` | 分页举报列表 |
+| GET | `/api/admin/actions` | 分页查询用户/技能状态变更审计 |
 | POST | `/api/admin/reports/{id}/handle` | 处理普通举报 |
 | POST | `/api/admin/abnormal-tasks/{reportId}/resolve` | `REFUND/SETTLE/RESUME` 异常裁决 |
 | GET | `/api/admin/skills` | 查询全部技能分类（含已停用） |
 | POST | `/api/admin/skills` | 新增技能分类 |
-| PUT | `/api/admin/skills/{id}/status/{status}` | 启用/停用技能分类 |
+| PUT | `/api/admin/skills/{id}/status/{status}` | 启用/停用技能分类；请求体携带 `reason` 并写入操作审计 |
+
+管理员操作审计复用现有 `report` 表，以 `ADMIN_USER_STATUS`、`ADMIN_SKILL_STATUS` 区分操作类型，保存管理员、目标、原因、状态变化和时间；普通举报列表及举报统计会排除这些记录，不新增应用表。
 
 ## 数据库迁移
 
@@ -149,6 +152,8 @@ MySQL 数据与上传图片分别保存在命名卷 `campuslink_mysql` 和 `camp
 - V2：异常任务恢复所需的原状态字段。
 - V3：业务外键。
 - V4：积分、信用、任务奖励和评价星级检查约束。
+- V5：刷新会话、重新分配历史及安全/履约字段。
+- V6：治理、账本和外键约束收口；应用表总数保持 16 张。
 
 不要修改已经执行过的迁移文件；后续结构变更应新增更高版本迁移。
 

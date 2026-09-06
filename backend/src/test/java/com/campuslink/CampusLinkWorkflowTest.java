@@ -25,7 +25,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@SpringBootTest(properties={"spring.flyway.clean-disabled=false","debug=false","logging.level.root=WARN"})
+@SpringBootTest(properties={"spring.flyway.clean-disabled=false","debug=false","logging.level.root=WARN","campuslink.task-timeout-cron=-","campuslink.refresh-cleanup-cron=-"})
 @AutoConfigureMockMvc
 class CampusLinkWorkflowTest {
     @Autowired MockMvc mvc;
@@ -46,7 +46,7 @@ class CampusLinkWorkflowTest {
         long taskId=list.at("/data/records/0/id").asLong();
 
         JsonNode apply=postJson("/api/tasks/"+taskId+"/applications",bob,"{\"message\":\"我有摄影经验，可以按时完成\"}");
-        assertThat(apply.get("code").asInt()).isZero();
+        assertThat(apply.get("code").asInt()).isEqualTo(200);
 
         JsonNode applications=getJson("/api/tasks/"+taskId+"/applications",alice);
         long applicationId=applications.at("/data/records/0/application/id").asLong();
@@ -55,7 +55,9 @@ class CampusLinkWorkflowTest {
         assertThat(accepted.at("/data/order/status").asText()).isEqualTo("WAIT_EXECUTE");
 
         assertThat(postJson("/api/orders/"+orderId+"/start",bob,"{}").at("/data/order/status").asText()).isEqualTo("IN_PROGRESS");
-        assertThat(postJson("/api/orders/"+orderId+"/completions",bob,"{\"description\":\"拍摄完成，照片已整理上传\",\"proofUrl\":\"https://example.test/proof.jpg\"}").at("/data/order/status").asText()).isEqualTo("WAIT_ACCEPTANCE");
+        JsonNode completion=postJson("/api/orders/"+orderId+"/completions",bob,"{\"description\":\"拍摄完成，照片已整理上传\"}");
+        assertThat(completion.at("/data/reviewStatus").asText()).isEqualTo("PENDING");
+        assertThat(getJson("/api/orders/"+orderId,alice).at("/data/order/status").asText()).isEqualTo("WAIT_ACCEPTANCE");
         assertThat(postJson("/api/orders/"+orderId+"/approve",alice,"{}").at("/data/order/status").asText()).isEqualTo("COMPLETED");
 
         JsonNode bobWallet=getJson("/api/wallet",bob);
@@ -66,7 +68,7 @@ class CampusLinkWorkflowTest {
 
         long bobId=accepted.at("/data/accepter/id").asLong();
         JsonNode review=postJson("/api/reviews",alice,"{\"businessType\":\"TASK\",\"businessId\":"+orderId+",\"revieweeId\":"+bobId+",\"rating\":5,\"content\":\"认真负责\"}");
-        assertThat(review.get("code").asInt()).isZero();
+        assertThat(review.get("code").asInt()).isEqualTo(200);
         assertThat(getJson("/api/wallet",bob).at("/data/creditScore").asInt()).isEqualTo(99);
     }
 
@@ -74,14 +76,14 @@ class CampusLinkWorkflowTest {
     void adminAndSkillMatchingEndpointsAreProtectedAndAvailable() throws Exception {
         String alice=login("alice","demo123"), admin=login("admin","admin123");
         JsonNode matches=getJson("/api/skills/matches",alice);
-        assertThat(matches.get("code").asInt()).isZero();
-        assertThat(matches.get("data").isArray()).isTrue();
+        assertThat(matches.get("code").asInt()).isEqualTo(200);
+        assertThat(matches.at("/data/records").isArray()).isTrue();
         JsonNode dashboard=getJson("/api/admin/dashboard",admin);
         assertThat(dashboard.at("/data/users").asLong()).isGreaterThanOrEqualTo(2);
         JsonNode users=getJson("/api/admin/users?page=1&size=1",admin);
         assertThat(users.at("/data/records").size()).isEqualTo(1);
         assertThat(users.at("/data/total").asLong()).isGreaterThanOrEqualTo(3);
-        mvc.perform(get("/api/admin/dashboard").header("Authorization","Bearer "+alice)).andExpect(status().isOk())
+        mvc.perform(get("/api/admin/dashboard").header("Authorization","Bearer "+alice)).andExpect(status().isForbidden())
                 .andExpect(result->assertThat(json.readTree(result.getResponse().getContentAsString()).get("code").asInt()).isEqualTo(403));
     }
 
@@ -100,7 +102,7 @@ class CampusLinkWorkflowTest {
 
     @Test
     void overdueTaskIsMarkedAbnormalOnlyOnce() throws Exception {
-        StartedOrder started=prepareStartedOrder();CampusTask task=taskMapper.selectById(started.taskId);task.setTaskTime(LocalDateTime.now().minusDays(2));taskMapper.updateById(task);
+        StartedOrder started=prepareStartedOrder();CampusTask task=taskMapper.selectById(started.taskId);task.setTaskTime(LocalDateTime.now().minusDays(2));taskMapper.updateById(task);TaskOrder overdue=orderMapper.selectById(started.orderId);overdue.setDueAt(LocalDateTime.now().minusDays(1));orderMapper.updateById(overdue);
         assertThat(timeoutService.processOverdue(LocalDateTime.now())).isEqualTo(1);
         assertThat(timeoutService.processOverdue(LocalDateTime.now())).isZero();
         TaskOrder order=orderMapper.selectById(started.orderId);assertThat(order.getStatus()).isEqualTo("ABNORMAL");
@@ -112,12 +114,12 @@ class CampusLinkWorkflowTest {
         String alice=login("alice","demo123"),bob=login("bob","demo123");
         JsonNode charlieRegistration=postJson("/api/auth/register",null,"{\"username\":\"charlie\",\"password\":\"demo123\",\"nickname\":\"周然\",\"studentNo\":\"20260003\",\"email\":\"charlie@campus.edu.cn\"}");String charlie=charlieRegistration.at("/data/token").asText();
         long taskId=getJson("/api/public/tasks?page=1&size=10",null).at("/data/records/0/id").asLong();postJson("/api/tasks/"+taskId+"/applications",bob,"{\"message\":\"申请一\"}");postJson("/api/tasks/"+taskId+"/applications",charlie,"{\"message\":\"申请二\"}");JsonNode applications=getJson("/api/tasks/"+taskId+"/applications",alice);long first=applications.at("/data/records/0/application/id").asLong(),second=applications.at("/data/records/1/application/id").asLong();
-        CompletableFuture<JsonNode> a=CompletableFuture.supplyAsync(()->postUnchecked("/api/applications/"+first+"/accept",alice));CompletableFuture<JsonNode> b=CompletableFuture.supplyAsync(()->postUnchecked("/api/applications/"+second+"/accept",alice));List<JsonNode> results=List.of(a.join(),b.join());assertThat(results.stream().filter(n->n.get("code").asInt()==0).count()).isEqualTo(1);assertThat(results.stream().filter(n->n.get("code").asInt()!=0).count()).isEqualTo(1);assertThat(orderMapper.selectCount(null)).isEqualTo(1);
+        CompletableFuture<JsonNode> a=CompletableFuture.supplyAsync(()->postUnchecked("/api/applications/"+first+"/accept",alice));CompletableFuture<JsonNode> b=CompletableFuture.supplyAsync(()->postUnchecked("/api/applications/"+second+"/accept",alice));List<JsonNode> results=List.of(a.join(),b.join());assertThat(results.stream().filter(n->n.get("code").asInt()==200).count()).isEqualTo(1);assertThat(results.stream().filter(n->n.get("code").asInt()!=200).count()).isEqualTo(1);assertThat(orderMapper.selectCount(null)).isEqualTo(1);
     }
 
     @Test
     void imageUploadReturnsServableUrl() throws Exception {
-        String token=login("alice","demo123");MockMultipartFile file=new MockMultipartFile("file","proof.png","image/png",new byte[]{(byte)0x89,0x50,0x4e,0x47});String response=mvc.perform(multipart("/api/files/images").file(file).header("Authorization","Bearer "+token)).andExpect(status().isOk()).andReturn().getResponse().getContentAsString();JsonNode result=json.readTree(response);assertThat(result.get("code").asInt()).isZero();assertThat(result.at("/data/url").asText()).startsWith("/uploads/");
+        String token=login("alice","demo123");java.io.ByteArrayOutputStream image=new java.io.ByteArrayOutputStream();javax.imageio.ImageIO.write(new java.awt.image.BufferedImage(1,1,java.awt.image.BufferedImage.TYPE_INT_RGB),"png",image);MockMultipartFile file=new MockMultipartFile("file","proof.png","image/png",image.toByteArray());String response=mvc.perform(multipart("/api/files/images").file(file).header("Authorization","Bearer "+token)).andExpect(status().isOk()).andReturn().getResponse().getContentAsString();JsonNode result=json.readTree(response);assertThat(result.get("code").asInt()).isEqualTo(200);assertThat(result.at("/data/url").asText()).startsWith("/uploads/");
     }
 
     private StartedOrder prepareStartedOrder() throws Exception {String alice=login("alice","demo123"),bob=login("bob","demo123");long taskId=getJson("/api/public/tasks?page=1&size=10",null).at("/data/records/0/id").asLong();postJson("/api/tasks/"+taskId+"/applications",bob,"{\"message\":\"可以完成\"}");long applicationId=getJson("/api/tasks/"+taskId+"/applications",alice).at("/data/records/0/application/id").asLong();long orderId=postJson("/api/applications/"+applicationId+"/accept",alice,"{}").at("/data/order/id").asLong();postJson("/api/orders/"+orderId+"/start",bob,"{}");return new StartedOrder(taskId,orderId,alice,bob);}
@@ -126,5 +128,5 @@ class CampusLinkWorkflowTest {
 
     private String login(String account,String password) throws Exception {return postJson("/api/auth/login",null,"{\"account\":\""+account+"\",\"password\":\""+password+"\"}").at("/data/token").asText();}
     private JsonNode getJson(String path,String token) throws Exception {var req=get(path);if(token!=null)req.header("Authorization","Bearer "+token);String body=mvc.perform(req).andExpect(status().isOk()).andReturn().getResponse().getContentAsString();return json.readTree(body);}
-    private JsonNode postJson(String path,String token,String body) throws Exception {var req=post(path).contentType(MediaType.APPLICATION_JSON).content(body);if(token!=null)req.header("Authorization","Bearer "+token);String response=mvc.perform(req).andExpect(status().isOk()).andReturn().getResponse().getContentAsString();return json.readTree(response);}
+    private JsonNode postJson(String path,String token,String body) throws Exception {var req=post(path).contentType(MediaType.APPLICATION_JSON).content(body);if(token!=null)req.header("Authorization","Bearer "+token);String response=mvc.perform(req).andReturn().getResponse().getContentAsString();return json.readTree(response);}
 }

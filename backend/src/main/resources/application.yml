@@ -7,12 +7,15 @@ spring:
   servlet:
     multipart:
       max-file-size: 10MB
-      max-request-size: 10MB
+      max-request-size: 11MB
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:h2:mem:campuslink;MODE=MySQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE;NON_KEYWORDS=USER}
     username: ${SPRING_DATASOURCE_USERNAME:sa}
     password: ${SPRING_DATASOURCE_PASSWORD:}
     driver-class-name: ${SPRING_DATASOURCE_DRIVER:org.h2.Driver}
+    hikari:
+      maximum-pool-size: ${SPRING_DATASOURCE_POOL_MAX:30}
+      minimum-idle: ${SPRING_DATASOURCE_POOL_MIN:5}
   sql:
     init:
       mode: never
@@ -31,12 +34,18 @@ mybatis-plus:
 
 campuslink:
   token-secret: ${CAMPUSLINK_TOKEN_SECRET:campuslink-course-design-change-in-production}
-  token-hours: 24
+  token-hours: 2
   initial-points: 200
   seed-demo-data: ${CAMPUSLINK_SEED_DEMO_DATA:true}
   bootstrap-admin-username: ${CAMPUSLINK_BOOTSTRAP_ADMIN_USERNAME:}
+  match:
+    skill-weight: ${CAMPUSLINK_MATCH_SKILL_WEIGHT:0.5}
+    credit-weight: ${CAMPUSLINK_MATCH_CREDIT_WEIGHT:0.2}
+    rating-weight: ${CAMPUSLINK_MATCH_RATING_WEIGHT:0.2}
+    activity-weight: ${CAMPUSLINK_MATCH_ACTIVITY_WEIGHT:0.1}
   bootstrap-admin-password: ${CAMPUSLINK_BOOTSTRAP_ADMIN_PASSWORD:}
-  task-timeout-grace-hours: 24
+  task-timeout-grace-hours: 0
+  rejection-limit: 3
   task-timeout-cron: ${CAMPUSLINK_TIMEOUT_CRON:0 */10 * * * *}
   upload-dir: ${CAMPUSLINK_UPLOAD_DIR:./uploads}
 

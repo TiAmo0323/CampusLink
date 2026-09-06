@@ -1,0 +1,20 @@
+[
+  {
+    "name": "skill_delist_calls_task_api",
+    "skillId": 1,
+    "skillName": "Java编程",
+    "request": "http://127.0.0.1:18089/api/admin/tasks/1/delist",
+    "http": 200,
+    "taskBefore": 200,
+    "taskAfter": 404,
+    "skillStatusAfter": "ENABLED"
+  },
+  {
+    "name": "admin_cannot_view_order_evidence",
+    "http": 403,
+    "body": {
+      "code": 403,
+      "message": "无权查看订单"
+    }
+  }
+]
